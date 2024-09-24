@@ -1,0 +1,47 @@
+basePath: /api/v1
+definitions:
+  userDto.UserLogin:
+    properties:
+      login:
+        type: string
+      senha:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Esta é uma API simples usando Gin e Swagger.
+  title: Golang Documentação API 2.5
+  version: "1.0"
+paths:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Autentica um usuário e retorna um token JWT com os dados do usuário.
+      parameters:
+      - description: Dados de Login
+        in: body
+        name: login
+        required: true
+        schema:
+          $ref: '#/definitions/userDto.UserLogin'
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Erro ao processar a requisição
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Erro interno do servidor
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Autenticação de Usuário
+      tags:
+      - Autenticação
+swagger: "2.0"
