@@ -7,38 +7,12 @@ import (
 	"net/http"
 )
 
-func CheckUsuario(db *sql.DB, user userDto.UserLogin, response http.ResponseWriter) userDto.UserData {
-	var Login string
-	var Nome string
-	var senha string
-	var id int
-	var userData userDto.UserData
-	row := db.QueryRow("SELECT login,nome,senha,id from Usuarios WHERE login=$1", user.Login)
-	err := row.Scan(&Login, &Nome, &senha, &id)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			httpkit.AppNotFound("Usuário não encontrado", response)
-		}
-		httpkit.AppUnauthorized("Credenciais incorretas", response)
-
-	}
-	if senha != user.Senha {
-		httpkit.AppUnauthorized("Credenciais incorretas", response)
-	}
-	userData = userDto.UserData{
-		Id:    id,
-		Nome:  Nome,
-		Login: Login,
-	}
-	return userData
-}
-
-func InsertUsuario(db *sql.DB, user userDto.UserSignin, response http.ResponseWriter) int {
+func InsertUsuario(db *sql.DB, user userDto.UserData, response http.ResponseWriter) int {
 	var lastInsertID int
 
-	err := db.QueryRow("INSERT INTO Usuarios (login,nome,senha) VALUES ($1, $2, $3) RETURNING id", user.Login, user.Nome, user.Senha).Scan(&lastInsertID)
+	err := db.QueryRow("INSERT INTO usuario (login,nome,curso,codigo) VALUES ($1, $2, $3,$4) RETURNING id", user.Login, user.Nome, user.Curso, user.Codigo).Scan(&lastInsertID)
 	if err != nil {
-		httpkit.AppConflict("Conflito ao tentar inserir novo usuário", response)
+		httpkit.AppConflict("Conflito ao tentar inserir novo usuário: "+err.Error(), response)
 	}
 	return int(lastInsertID)
 }

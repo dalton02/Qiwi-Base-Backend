@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,11 +7,71 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Usuarios{
-  id    Int    @id @default(autoincrement())
-  login String @db.VarChar(200) @unique
-  nome  String @db.VarChar(200)
-  senha String @db.VarChar(300)
-  @@map("usuarios")
+model Usuario{
+  id     Int    @id @default(autoincrement())
+  codigo Int @db.Integer
+  login  String @db.VarChar(200) @unique
+  nome   String @db.VarChar(200)
+  curso  String @db.VarChar(200)
+  notificacoes Notificacao[]
+  postagens Postagem[]
+  reacoes Reacao[]
+  comentarios Comentario[]
+  criadoEm       DateTime  @default(now()) @map("criado_em")
+  atualizadoEm   DateTime  @default(now()) @updatedAt  @map("atualizado_em")
+  @@map("usuario")
 }
 
+model Postagem{
+  id Int @id @default(autoincrement()) 
+  tipo String //Enum: "noticia,artigo"
+  titulo String @db.VarChar(200)
+  conteudo String @db.Text()
+  tags String[]
+
+  comentarios Comentario[]
+  reacoes Reacao[]
+  
+  usuarioId Int?  @map("usuario_id")
+  usuario Usuario? @relation(fields: [usuarioId],references: [id])
+
+  criadoEm       DateTime  @default(now()) @map("criado_em")
+  atualizadoEm   DateTime  @default(now()) @updatedAt  @map("atualizado_em")
+
+  @@unique([tipo, titulo])
+  @@map("postagem")
+}
+
+model Comentario{
+  id Int @id @default(autoincrement())
+  conteudo String @db.VarChar(1000)
+  postagemId Int  @map("postagem_id")
+  postagem Postagem @relation(fields: [postagemId],references: [id])
+  usuarioId Int @map("usuario_id")
+  usuario Usuario @relation(fields: [usuarioId],references: [id])
+  criadoEm       DateTime  @default(now()) @map("criado_em")
+  atualizadoEm   DateTime  @default(now()) @updatedAt  @map("atualizado_em")
+  @@map("comentario")
+}
+
+model Reacao{
+  id Int @id @default(autoincrement())
+  tipo String @db.VarChar(50)
+  postagemId Int  @map("postagem_id")
+  postagem Postagem @relation(fields: [postagemId],references: [id])
+  usuarioId Int  @map("usuario_id")
+  usuario Usuario @relation(fields: [usuarioId],references: [id])
+  @@map("reacao")
+}
+
+model Notificacao {
+  id             Int       @id @default(autoincrement())
+  usuarioId      Int       @map("usuario_id")
+  tipo           String 
+  mensagem       String
+  status         String   
+  usuario        Usuario   @relation(fields: [usuarioId], references: [id])
+  criadoEm       DateTime  @default(now()) @map("criado_em")
+  atualizadoEm   DateTime  @default(now()) @updatedAt  @map("atualizado_em")
+  @@map("notificacao")
+}

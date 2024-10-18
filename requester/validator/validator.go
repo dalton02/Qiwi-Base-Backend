@@ -42,7 +42,6 @@ func CheckPropretys[T any](data T, mapaJson MapJson) (string, bool) {
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		value := v.Field(i)
-		fmt.Println(field)
 		typeValidation := field.Tag.Get("validator")
 
 		toValidate := util.CommonToArray(typeValidation)

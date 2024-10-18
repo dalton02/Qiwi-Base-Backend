@@ -10,21 +10,6 @@ import (
 	"time"
 )
 
-func DateFormatJwt() int64 {
-	now := time.Now().Add(30 * time.Minute)
-	return now.Unix()
-}
-
-func IsPastDateString(dateStr string) bool {
-	const layout = "02-01-2006 15:04"
-	parsedTime, err := time.ParseInLocation(layout, dateStr, time.Local)
-	if err != nil {
-		return false
-	}
-	now := time.Now()
-	return parsedTime.Before(now)
-}
-
 func StringToDate(input string) time.Time {
 	parts := strings.Split(input, ".")
 	if len(parts) < 2 {

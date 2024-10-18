@@ -1,13 +1,13 @@
 package httpkit
 
 import (
-	"api_journal/core/util"
 	dtoRequest "api_journal/requester/dto"
 	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt"
 )
@@ -28,9 +28,11 @@ func GetUrlParams(request *http.Request) (dtoRequest.Params, error) {
 	return params, nil
 }
 
-func GetDataToken(request *http.Request) any {
-	tokenInterface := request.Context().Value("token")
-	return tokenInterface
+func GetDataToken(response http.ResponseWriter, request *http.Request) any {
+	authorization := request.Header.Get("Authorization")
+	token := GetBearerToken(authorization)
+	tokenData := GetJwtInfo(token, response)
+	return tokenData
 }
 
 func GenerateJwt[T any](data T) (string, error) {
@@ -39,7 +41,7 @@ func GenerateJwt[T any](data T) (string, error) {
 	claims := token.Claims.(jwt.MapClaims)
 	claims["authorized"] = true
 	claims["data"] = data
-	claims["exp"] = util.DateFormatJwt()
+	claims["exp"] = time.Now().Add(30 * time.Minute).Unix()
 	fmt.Println(claims["exp"])
 	tokenString, err := token.SignedString([]byte(secretKey))
 	if err != nil {

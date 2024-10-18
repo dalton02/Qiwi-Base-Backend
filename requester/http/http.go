@@ -12,6 +12,16 @@ type HttpMessage[T any] struct {
 	Message    string `json:"message"`
 }
 
+func GenerateHtmlResponse(statusCode int, html string, response http.ResponseWriter) {
+	response.Header().Set("Content-Type", "text/html")
+	response.WriteHeader(statusCode)
+	_, err := response.Write([]byte(html))
+	if err != nil {
+		http.Error(response, "Internal Server Error", http.StatusInternalServerError)
+	}
+	panic("common")
+}
+
 func GenerateHttpMessage[T any](statusCode int, data T, message string, response http.ResponseWriter) {
 	var dataResponse = HttpMessage[T]{
 		StatusCode: statusCode,

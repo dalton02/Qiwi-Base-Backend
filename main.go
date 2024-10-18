@@ -33,6 +33,12 @@ func main() {
 		meuBanco, _ := service.InitConnection()
 		defer meuBanco.Close()
 		shared.SetDB(meuBanco)
+		// go func() {
+		// 	for {
+		// 		scrapperService.RunScrapper()
+		// 		time.Sleep(8 * time.Hour)
+		// 	}
+		// }()
 		server.MainServer()
 	}()
 

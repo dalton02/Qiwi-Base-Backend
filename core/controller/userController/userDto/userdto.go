@@ -15,7 +15,8 @@ type UserSignin struct {
 }
 
 type UserData struct {
-	Login string `json:"login"`
-	Nome  string `json:"nome"`
-	Id    int    `json:"id"`
+	Login  string
+	Nome   string
+	Curso  string
+	Codigo int
 }

@@ -1,7 +1,6 @@
 package neslang
 
 import (
-	jwtkit "api_journal/requester/cripty"
 	httpkit "api_journal/requester/http"
 	"api_journal/requester/validator"
 	"bytes"
@@ -19,6 +18,11 @@ func validation[B any, Q any](response http.ResponseWriter, request *http.Reques
 	request.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 
 	var dataR B
+
+	if len(body) == 0 {
+		body = []byte("{}")
+	}
+
 	jsonString := body
 	json.Unmarshal(body, &dataR)
 	var jsonData map[string]interface{}
@@ -30,7 +34,6 @@ func validation[B any, Q any](response http.ResponseWriter, request *http.Reques
 	errQuerys := ""
 	hasErrorQ := false
 	if has {
-
 		errQuerys, hasErrorQ = validator.CheckPropretys[Q](params, validator.QueryMap(maping))
 	}
 	if hasError || hasErrorQ {
@@ -64,5 +67,5 @@ func protected[B any, Q any](response http.ResponseWriter, request *http.Request
 	validation[B, Q](response, request)
 	auth := request.Header.Get("Authorization")
 	auth = httpkit.GetBearerToken(auth)
-	jwtkit.GetJwtInfo(auth, response)
+	httpkit.GetJwtInfo(auth, response)
 }
