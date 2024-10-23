@@ -23,7 +23,11 @@ import (
 func LoginUser(response http.ResponseWriter, request *http.Request) {
 	var user userDto.UserLogin
 	json.NewDecoder(request.Body).Decode(&user)
-	data := getCookiesFromSigaa(user.Login, user.Senha, response)
+	data, err := getCookiesFromSigaa(user.Login, user.Senha)
+	if err != nil {
+		httpkit.AppBadRequest(err.Error(), response)
+		return
+	}
 	codigo, _ := strconv.Atoi(data["codigo"])
 	userInfo := userDto.UserData{
 		Login:  user.Login,
@@ -31,7 +35,7 @@ func LoginUser(response http.ResponseWriter, request *http.Request) {
 		Codigo: codigo,
 		Nome:   data["nome"],
 	}
-	_, err := userService.GetUserByCodigo(shared.DB, userInfo.Codigo, response)
+	_, err = userService.GetUserByCodigo(shared.DB, userInfo.Codigo)
 	if err != nil {
 		userService.InsertUsuario(shared.DB, userInfo, response)
 	}

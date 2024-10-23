@@ -2,7 +2,6 @@ package httpkit
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -19,7 +18,6 @@ func GenerateHtmlResponse(statusCode int, html string, response http.ResponseWri
 	if err != nil {
 		http.Error(response, "Internal Server Error", http.StatusInternalServerError)
 	}
-	panic("common")
 }
 
 func GenerateHttpMessage[T any](statusCode int, data T, message string, response http.ResponseWriter) {
@@ -34,8 +32,6 @@ func GenerateHttpMessage[T any](statusCode int, data T, message string, response
 	if err := json.NewEncoder(response).Encode(dataResponse); err != nil {
 		http.Error(response, err.Error(), http.StatusInternalServerError)
 	}
-	panic("common")
-
 }
 
 func GenerateErrorHttpMessage(statusCode int, message string, response http.ResponseWriter) {
@@ -50,9 +46,6 @@ func GenerateErrorHttpMessage(statusCode int, message string, response http.Resp
 	if err := json.NewEncoder(response).Encode(dataResponse); err != nil {
 		http.Error(response, err.Error(), http.StatusInternalServerError)
 	}
-
-	panic("common")
-
 }
 
 func GenerateErrorHttpMessageNonPanic(statusCode int, message string, response http.ResponseWriter) {
@@ -61,7 +54,6 @@ func GenerateErrorHttpMessageNonPanic(statusCode int, message string, response h
 		Data:       nil,
 		Message:    message,
 	}
-	fmt.Println(dataResponse)
 	json.Marshal(dataResponse)
 	response.Header().Set("Content-Type", "application/json")
 	response.WriteHeader(statusCode)

@@ -1,5 +1,10 @@
 package postagensDto
 
+type ConteudoJson struct {
+	Tipo     string `json:"tipo" validator:"required"`
+	Conteudo string `json:"conteudo" validator:"required"`
+}
+
 type PesquisarTituloQuerys struct {
 	Tipo string `query:"tipo" validator:"required"`
 }
@@ -49,15 +54,18 @@ type UserPostagem struct {
 }
 
 type ComentarioDataComplete struct {
-	Conteudo string       `json:"conteudo" validator:"required"`
-	CriadoEm string       `json:"criadoEm"`
-	Autor    UserPostagem `json:"autor" validator:"required"`
+	Id       int                      `json:"id" validator:"required"`
+	Conteudo string                   `json:"conteudo" validator:"required"`
+	CriadoEm string                   `json:"criadoEm"`
+	Autor    UserPostagem             `json:"autor" validator:"required"`
+	Filhos   []ComentarioDataComplete `json:"filhos"`
 }
 type ComentarioData struct {
 	Conteudo   string `json:"conteudo" validator:"required"`
 	CriadoEm   string `json:"criadoEm"`
 	UsuarioId  int    `json:"usuarioId" validator:"required"`
 	PostagemId int    `json:"postagemId"` //Validado na url
+	ParenteId  int    `json:"parenteId" validator:"optional"`
 	Id         int    `json:"id"`
 }
 

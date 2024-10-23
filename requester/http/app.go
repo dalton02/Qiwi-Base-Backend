@@ -4,6 +4,18 @@ import (
 	"net/http"
 )
 
+type HttpMessageDto struct {
+	Message string
+	Status  int
+}
+
+func NewHttpMessage(message string, status int) HttpMessageDto {
+	return HttpMessageDto{
+		Message: message,
+		Status:  status,
+	}
+}
+
 type App interface {
 	AppConflict(handlerFunc func(message string, response http.ResponseWriter))
 	AppBadRequest(handlerFunc func(message string, response http.ResponseWriter))

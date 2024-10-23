@@ -27,8 +27,9 @@ model Postagem{
   tipo String //Enum: "noticia,artigo"
   titulo String @db.VarChar(200)
   conteudo String @db.Text()
+  conteudoEditavel String?
   tags String[]
-
+ 
   comentarios Comentario[]
   reacoes Reacao[]
   
@@ -45,10 +46,17 @@ model Postagem{
 model Comentario{
   id Int @id @default(autoincrement())
   conteudo String @db.VarChar(1000)
+  
   postagemId Int  @map("postagem_id")
   postagem Postagem @relation(fields: [postagemId],references: [id])
+
   usuarioId Int @map("usuario_id")
   usuario Usuario @relation(fields: [usuarioId],references: [id])
+  
+  parenteId Int? @map("parente_id")
+  parenteComentario Comentario? @relation("ComentarioFilho",fields: [parenteId],references: [id])
+  filhos Comentario[] @relation("ComentarioFilho") 
+
   criadoEm       DateTime  @default(now()) @map("criado_em")
   atualizadoEm   DateTime  @default(now()) @updatedAt  @map("atualizado_em")
   @@map("comentario")

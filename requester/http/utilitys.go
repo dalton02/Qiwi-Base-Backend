@@ -2,8 +2,9 @@ package httpkit
 
 import (
 	dtoRequest "api_journal/requester/dto"
+	"api_journal/requester/validator"
+	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -11,6 +12,26 @@ import (
 
 	"github.com/golang-jwt/jwt"
 )
+
+func GetRequestBody(request *http.Request) []byte {
+	body, ok := request.Context().Value("original_body").([]byte)
+	if !ok {
+		return nil
+	}
+	return body
+}
+
+func GetJsonSchema[T any](request *http.Request) map[int][]string {
+	body := GetRequestBody(request)
+	var data T
+	jsonString := body
+	json.Unmarshal(body, &data)
+	var jsonData map[string]interface{}
+	json.Unmarshal([]byte(jsonString), &jsonData)
+	keysByLevel := make(map[int][]string)
+	jsonSchema := validator.ExtractKeysByLevel(jsonData, 1, keysByLevel)
+	return jsonSchema.Mapa
+}
 
 func GetBearerToken(auth string) string {
 	result := strings.Replace(auth, "Bearer", "", -1)
@@ -28,11 +49,11 @@ func GetUrlParams(request *http.Request) (dtoRequest.Params, error) {
 	return params, nil
 }
 
-func GetDataToken(response http.ResponseWriter, request *http.Request) any {
+func GetDataToken(request *http.Request) (any, error) {
 	authorization := request.Header.Get("Authorization")
 	token := GetBearerToken(authorization)
-	tokenData := GetJwtInfo(token, response)
-	return tokenData
+	tokenData, err := GetJwtInfo(token)
+	return tokenData, err
 }
 
 func GenerateJwt[T any](data T) (string, error) {
@@ -42,7 +63,6 @@ func GenerateJwt[T any](data T) (string, error) {
 	claims["authorized"] = true
 	claims["data"] = data
 	claims["exp"] = time.Now().Add(30 * time.Minute).Unix()
-	fmt.Println(claims["exp"])
 	tokenString, err := token.SignedString([]byte(secretKey))
 	if err != nil {
 		return "", err
@@ -50,7 +70,7 @@ func GenerateJwt[T any](data T) (string, error) {
 	return tokenString, nil
 }
 
-func GetJwtInfo(tokenString string, response http.ResponseWriter) map[string]interface{} {
+func GetJwtInfo(tokenString string) (map[string]interface{}, error) {
 	secretKey := os.Getenv("JWT_SECRET")
 	claims := jwt.MapClaims{}
 
@@ -58,9 +78,9 @@ func GetJwtInfo(tokenString string, response http.ResponseWriter) map[string]int
 		return []byte(secretKey), nil
 	})
 	if err != nil {
-		AppUnauthorized("Token inválido ou expirado", response)
+		return make(map[string]interface{}), err
 	}
 
 	data, _ := claims["data"].(map[string]interface{})
-	return data
+	return data, nil
 }

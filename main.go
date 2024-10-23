@@ -4,7 +4,7 @@ import (
 	"api_journal/core/server"
 	"api_journal/core/server/shared"
 	"api_journal/core/service"
-	_ "api_journal/docs" // importa o pacote docs para registrar a documentação gerada pelo swag
+	_ "api_journal/docs"
 	"log"
 
 	"github.com/gin-gonic/gin"

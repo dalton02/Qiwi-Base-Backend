@@ -6,29 +6,39 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"net/http"
 )
 
-func validation[B any, Q any](response http.ResponseWriter, request *http.Request) bool {
-	body, err := ioutil.ReadAll(request.Body)
+func readBody(request *http.Request, response http.ResponseWriter) ([]byte, error) {
+	var buf bytes.Buffer
+	tee := io.TeeReader(request.Body, &buf)
+	body, err := ioutil.ReadAll(tee)
 	if err != nil {
-		httpkit.GenerateErrorHttpMessage(400, "Erro ao ler o corpo da requisição", response)
+		return body, err
 	}
-	request.Body = ioutil.NopCloser(bytes.NewBuffer(body))
-
-	var dataR B
-
 	if len(body) == 0 {
 		body = []byte("{}")
 	}
+	request.Body = ioutil.NopCloser(bytes.NewBuffer(buf.Bytes()))
+	return body, nil
+}
 
+func validation[B any, Q any](response http.ResponseWriter, request *http.Request) (bool, *http.Request) {
+	body, err := readBody(request, response)
+	if err != nil {
+		httpkit.GenerateErrorHttpMessage(400, "Erro ao ler o corpo da requisição", response)
+		return false, request
+	}
+	var dataR B
 	jsonString := body
 	json.Unmarshal(body, &dataR)
 	var jsonData map[string]interface{}
 	json.Unmarshal([]byte(jsonString), &jsonData)
 	keysByLevel := make(map[int][]string)
-
+	ctx := context.WithValue(request.Context(), "original_body", body)
+	request = request.WithContext(ctx)
 	errValidacao, hasError := validator.CheckPropretys[B](dataR, validator.ExtractKeysByLevel(jsonData, 1, keysByLevel))
 	params, has, maping := extractQueryParams[Q](request)
 	errQuerys := ""
@@ -38,34 +48,45 @@ func validation[B any, Q any](response http.ResponseWriter, request *http.Reques
 	}
 	if hasError || hasErrorQ {
 		httpkit.GenerateErrorHttpMessage(400, errValidacao+errQuerys, response)
-		return false
+		return false, request
 	}
 
-	return true
+	return true, request
 }
 
 func generic[B any, Q any](response http.ResponseWriter, request *http.Request, r *HandlerRequest[B, Q], typeRequest string) {
 	isSameRequest(typeRequest, request, response)
+	var valid bool
 	if r.middleware == "public" {
-		public[B, Q](response, request)
+		valid, request = public[B, Q](response, request)
 	} else if r.middleware == "protected" {
-		protected[B, Q](response, request)
+		valid, request = protected[B, Q](response, request)
+	}
+	if !valid {
+		return
 	}
 	params, err := extractParams(r.rota, request.URL.Path)
 	if err == nil {
 		ctx := context.WithValue(request.Context(), "params", params)
 		r.controller(response, request.WithContext(ctx))
+		return
 	}
 	r.controller(response, request)
 }
 
-func public[B any, Q any](response http.ResponseWriter, request *http.Request) {
-	validation[B, Q](response, request)
+func public[B any, Q any](response http.ResponseWriter, request *http.Request) (bool, *http.Request) {
+	valid, request := validation[B, Q](response, request)
+	return valid, request
 }
 
-func protected[B any, Q any](response http.ResponseWriter, request *http.Request) {
-	validation[B, Q](response, request)
+func protected[B any, Q any](response http.ResponseWriter, request *http.Request) (bool, *http.Request) {
+	valid, request := validation[B, Q](response, request)
 	auth := request.Header.Get("Authorization")
 	auth = httpkit.GetBearerToken(auth)
-	httpkit.GetJwtInfo(auth, response)
+	_, err := httpkit.GetJwtInfo(auth)
+	if err != nil {
+		valid = false
+		httpkit.AppForbidden("Token invalido/Expirado, faça login novamente", response)
+	}
+	return valid, request
 }

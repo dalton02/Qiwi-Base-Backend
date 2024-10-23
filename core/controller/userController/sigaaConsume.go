@@ -1,7 +1,7 @@
 package userController
 
 import (
-	httpkit "api_journal/requester/http"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -10,19 +10,19 @@ import (
 )
 
 // Função para obter os cookies do SIGAA
-func getCookiesFromSigaa(login string, password string, response http.ResponseWriter) map[string]string {
+func getCookiesFromSigaa(login string, password string) (map[string]string, error) {
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", "https://sig.ufca.edu.br/sigaa/mobile/touch/login.jsf", nil)
 	req.Header.Set("Cookie", "")
 	resp, _ := client.Do(req)
 	defer resp.Body.Close()
 	cookieHeader := resp.Header["Set-Cookie"]
-	page := getInfoFromSigaa(login, password, string(cookieHeader[0]), response)
-	return getEssentialHtml(page, response)
+	page := getInfoFromSigaa(login, password, string(cookieHeader[0]))
+	return getEssentialHtml(page)
 }
 
 // Função para obter informações do SIGAA
-func getInfoFromSigaa(login, password, cookie string, response http.ResponseWriter) string {
+func getInfoFromSigaa(login, password, cookie string) string {
 	// Configurações do cabeçalho da requisição
 	client := &http.Client{}
 	data := url.Values{}
@@ -46,7 +46,7 @@ func getInfoFromSigaa(login, password, cookie string, response http.ResponseWrit
 	body, _ := ioutil.ReadAll(resp.Body)
 	return string(body)
 }
-func getEssentialHtml(page string, response http.ResponseWriter) map[string]string {
+func getEssentialHtml(page string) (map[string]string, error) {
 	data := make(map[string]string)
 	fullnameRegex := regexp.MustCompile(`<strong>(.*?)<\/strong>`)
 	fullnameMatches := fullnameRegex.FindStringSubmatch(page)
@@ -66,9 +66,9 @@ func getEssentialHtml(page string, response http.ResponseWriter) map[string]stri
 		data["curso"] = convertCharacters(data["curso"])
 	}
 	if len(data) == 0 {
-		httpkit.AppBadRequest("Credenciais incorretas", response)
+		return data, fmt.Errorf("Credenciais incorretas")
 	}
-	return data
+	return data, nil
 }
 
 // Converte caracteres especiais para uma forma legível.

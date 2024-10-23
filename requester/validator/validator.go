@@ -2,9 +2,7 @@ package validator
 
 import (
 	"api_journal/core/util"
-	"fmt"
 	"reflect"
-	"strconv"
 )
 
 type MapJson struct {
@@ -15,14 +13,9 @@ type MapJson struct {
 }
 
 func getMapaField(level int, field string, tabela map[int][]string) bool {
-	fmt.Println("Nivel de acesso: " + strconv.Itoa(level) + ", a procurar: " + field)
-	fmt.Println(tabela)
 	if stringsNivel, ok := tabela[level]; ok {
-		fmt.Println("Acesso feito, seguinte lista: ")
 		for _, str := range stringsNivel {
-			fmt.Println(str)
 			if str == field {
-				fmt.Println("Achei no mapa: " + str)
 				return true
 			}
 		}
@@ -197,7 +190,6 @@ func testSlices(primitive reflect.StructField, value reflect.Value, mapaJson Map
 		}
 		return "a []int64 with at least one element"
 	case reflect.Struct:
-		fmt.Println(value.Type().Elem())
 		if isSet {
 			mapaJson.Level++
 			for i := 0; i < value.Len(); i++ {
@@ -208,9 +200,7 @@ func testSlices(primitive reflect.StructField, value reflect.Value, mapaJson Map
 				}
 			}
 			mapaJson.Level--
-		} else { ///Arrumar esse miseravel segunda
-			fmt.Println("Tipo gerado: ")
-			fmt.Println(value.Type().Elem())
+		} else {
 			valuePtr := reflect.New(value.Type().Elem())
 			valueElem := valuePtr.Elem() // Isso obtém o valor do ponteiro
 			mapaJson.Level--
@@ -266,9 +256,6 @@ func ExtractKeysByLevel(data map[string]interface{}, level int, result map[int][
 			subMap := value.(map[string]interface{})
 			ExtractKeysByLevel(subMap, level+1, result)
 		}
-	}
-	for level, keys := range result {
-		fmt.Printf("Nível %d: %v\n", level, keys)
 	}
 	mapJ := MapJson{
 		Mapa:  result,
