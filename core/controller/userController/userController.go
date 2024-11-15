@@ -20,7 +20,7 @@ import (
 // @Failure 400 {object} map[string]string "Erro ao processar a requisição"
 // @Failure 500 {object} map[string]string "Erro interno do servidor"
 // @Router /login [post]
-func LoginUser(response http.ResponseWriter, request *http.Request) {
+func LoginAluno(response http.ResponseWriter, request *http.Request) {
 	var user userDto.UserLogin
 	json.NewDecoder(request.Body).Decode(&user)
 	data, err := getCookiesFromSigaa(user.Login, user.Senha)
@@ -35,11 +35,32 @@ func LoginUser(response http.ResponseWriter, request *http.Request) {
 		Codigo: codigo,
 		Nome:   data["nome"],
 	}
-	_, err = userService.GetUserByCodigo(shared.DB, userInfo.Codigo)
+
+	_, err = userService.GetAlunoByCodigo(shared.DB, userInfo.Codigo)
+
 	if err != nil {
-		userService.InsertUsuario(shared.DB, userInfo, response)
+
+		idUsuario, err2 := userService.InsertUsuario(shared.DB, userInfo, "aluno", response)
+
+		if err2 != nil {
+			return
+		}
+
+		_, err3 := userService.InsertAlunoAndRelate(shared.DB, userInfo, idUsuario, response)
+		if err3 != nil {
+			return
+		}
+
 	}
-	token, err := httpkit.GenerateJwt(userInfo)
+	jwtInfo := map[string]interface{}{
+		"login":  userInfo.Login,
+		"curso":  userInfo.Curso,
+		"codigo": userInfo.Codigo,
+		"nome":   userInfo.Nome,
+		"perfil": "aluno",
+	}
+
+	token, err := httpkit.GenerateJwt(jwtInfo)
 	data["token"] = token
 	httpkit.GenerateHttpMessage(200, data, "Login bem sucedido", response)
 }

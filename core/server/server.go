@@ -10,15 +10,27 @@ import (
 
 func MainServer() {
 
-	neslang.Public[userDto.UserLogin, any]("/auth/login").Post(userController.LoginUser)
-	neslang.Public[any, postagensDto.ListagemQuerys]("/postagens/listar").Get(postagemController.GetPostagens)
-	neslang.Public[any, postagensDto.PesquisarTituloQuerys]("/postagens/{titulo}").Get(postagemController.GetPostagemByTitle)
+	//Ao final de cada rota, você pode ir retornando infinitas funções de request, obrigatoriamente devem retornar um booleano informando o sucesso
+	// da operação
+	neslang.Public[userDto.UserLogin, any]("/auth/login").
+		Post(userController.LoginAluno)
+	neslang.Public[userDto.UserLogin, any]("/auth/login-externo").
+		Post(userController.LoginAluno)
 
-	neslang.Protected[postagensDto.NovaPostagem, any]("/postagens/postar").Post(postagemController.PostPostagem)
-	neslang.Protected[postagensDto.ComentarioData, any]("/postagens/{postagemId}/comentar").Post(postagemController.PostComentario)
-	neslang.Protected[postagensDto.ReacaoData, any]("/postagens/{postagemId}/reagir").Post(postagemController.PostReacao)
+	neslang.Public[any, postagensDto.ListagemQuerys]("/postagens/listar").
+		Get(postagemController.GetPostagens)
+	neslang.Public[any, postagensDto.PesquisarTituloQuerys]("/postagens/{titulo}").
+		Get(postagemController.GetPostagemByTitle)
 
-	neslang.Public[any, any]("/favicon.ico").Get(doNothing)
+	//Em rotas protected você tem como overload de parametros, as permissões de perfis de usuario que vão acessar as rotas
+	neslang.Protected[postagensDto.NovaPostagem, any]("/postagens/postar", "aluno").
+		Post(postagemController.PostPostagem)
+	neslang.Protected[postagensDto.ComentarioData, any]("/postagens/{postagemId}/comentar", "aluno").
+		Post(postagemController.PostComentario, postagemController.PostByParamExiste)
+	neslang.Protected[postagensDto.ReacaoData, any]("/postagens/{postagemId}/reagir").
+		Post(postagemController.PostReacao, postagemController.PostByParamExiste)
+
+	// neslang.Public[any, any]("/favicon.ico").Get(doNothing)
 	neslang.Init("4000")
 
 }

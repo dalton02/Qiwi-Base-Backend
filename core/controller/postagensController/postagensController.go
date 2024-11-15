@@ -60,6 +60,7 @@ func PostPostagem(response http.ResponseWriter, request *http.Request) {
 		httpkit.AppBadRequest("Usuario com esse id não existe", response)
 		return
 	}
+	//Aqui vai o id do aluno
 	idPost, err := postagensService.InsertPost(shared.DB, postagem)
 	if err != nil {
 		httpkit.AppBadRequest(err.Error(), response)
@@ -111,4 +112,16 @@ func PostReacao(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 	httpkit.AppSucess("Reação inserida com sucesso", make(map[string]string), response)
+}
+
+func PostByParamExiste(response http.ResponseWriter, request *http.Request) bool {
+
+	params, _ := httpkit.GetUrlParams(request)
+	postId, _ := strconv.Atoi(params.Param["postagemId"])
+	existe := postagensService.GetPostagemExiste(shared.DB, postId)
+	if !existe {
+		httpkit.AppNotFound("Postagem não encontrada", response)
+		return false
+	}
+	return true
 }

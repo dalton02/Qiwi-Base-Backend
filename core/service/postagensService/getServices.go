@@ -7,6 +7,15 @@ import (
 	"github.com/lib/pq"
 )
 
+func GetPostagemExiste(db *sql.DB, id int) bool {
+	var titulo string
+	row := db.QueryRow("SELECT titulo from postagem WHERE id=$1", id)
+	err := row.Scan(&titulo)
+	if err != nil {
+		return false
+	}
+	return true
+}
 func GetPostById(db *sql.DB, id int) (postagensDto.NovaPostagem, error) {
 	var postagem postagensDto.NovaPostagem
 	row := db.QueryRow("SELECT tipo,titulo,conteudo,tags,usuario_id from postagem WHERE id=$1", id)

@@ -9,17 +9,23 @@ import (
 )
 
 type Requests interface {
-	Post(handlerFunc func(http.ResponseWriter, *http.Request))
+	Post(handlerFunc func(http.ResponseWriter, *http.Request), middleware ...func(http.ResponseWriter, *http.Request) bool)
 	Get(handlerFunc func(http.ResponseWriter, *http.Request))
-	Put(handlerFunc func(http.ResponseWriter, *http.Request))
-	Patch(handlerFunc func(http.ResponseWriter, *http.Request))
-	Delete(handlerFunc func(http.ResponseWriter, *http.Request))
+	Put(handlerFunc func(http.ResponseWriter, *http.Request), middleware ...func(http.ResponseWriter, *http.Request) bool)
+	Patch(handlerFunc func(http.ResponseWriter, *http.Request), middleware ...func(http.ResponseWriter, *http.Request) bool)
+	Delete(handlerFunc func(http.ResponseWriter, *http.Request), middleware ...func(http.ResponseWriter, *http.Request) bool)
+}
+
+func nothing(response http.ResponseWriter, request *http.Request) bool {
+	return true
 }
 
 type HandlerRequest[B any, Q any] struct {
-	rota       string
-	middleware string
-	controller func(http.ResponseWriter, *http.Request)
+	rota           string
+	middleware     string
+	overMiddleware []func(http.ResponseWriter, *http.Request) bool
+	profiles       []string
+	controller     func(http.ResponseWriter, *http.Request)
 }
 
 func Init(porta string) {
@@ -32,10 +38,17 @@ func Init(porta string) {
 }
 
 func Public[B any, Q any](rota string) Requests {
-	return &HandlerRequest[B, Q]{rota: rota, middleware: "public"}
+	return &HandlerRequest[B, Q]{
+		rota:       rota,
+		middleware: "public",
+	}
 }
-func Protected[B any, Q any](rota string) Requests {
-	return &HandlerRequest[B, Q]{rota: rota, middleware: "protected"}
+func Protected[B any, Q any](rota string, profiles ...string) Requests {
+	return &HandlerRequest[B, Q]{
+		rota:       rota,
+		middleware: "protected",
+		profiles:   profiles,
+	}
 }
 
 func (r *HandlerRequest[B, Q]) Get(handlerFunc func(http.ResponseWriter, *http.Request)) {
@@ -54,8 +67,9 @@ func (r *HandlerRequest[B, Q]) Get(handlerFunc func(http.ResponseWriter, *http.R
 		generic[B, Q](response, request, r, "GET")
 	})
 }
-func (r *HandlerRequest[B, Q]) Post(handlerFunc func(http.ResponseWriter, *http.Request)) {
+func (r *HandlerRequest[B, Q]) Post(handlerFunc func(http.ResponseWriter, *http.Request), middleware ...func(http.ResponseWriter, *http.Request) bool) {
 	r.controller = handlerFunc
+	r.overMiddleware = middleware
 	http.HandleFunc(r.rota, func(response http.ResponseWriter, request *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -67,11 +81,14 @@ func (r *HandlerRequest[B, Q]) Post(handlerFunc func(http.ResponseWriter, *http.
 				return
 			}
 		}()
+
 		generic[B, Q](response, request, r, "POST")
 	})
 }
-func (r *HandlerRequest[B, Q]) Put(handlerFunc func(http.ResponseWriter, *http.Request)) {
+func (r *HandlerRequest[B, Q]) Put(handlerFunc func(http.ResponseWriter, *http.Request), middleware ...func(http.ResponseWriter, *http.Request) bool) {
 	r.controller = handlerFunc
+
+	r.overMiddleware = middleware
 	http.HandleFunc(r.rota, func(response http.ResponseWriter, request *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -86,8 +103,10 @@ func (r *HandlerRequest[B, Q]) Put(handlerFunc func(http.ResponseWriter, *http.R
 		generic[B, Q](response, request, r, "PUT")
 	})
 }
-func (r *HandlerRequest[B, Q]) Patch(handlerFunc func(http.ResponseWriter, *http.Request)) {
+func (r *HandlerRequest[B, Q]) Patch(handlerFunc func(http.ResponseWriter, *http.Request), middleware ...func(http.ResponseWriter, *http.Request) bool) {
 	r.controller = handlerFunc
+
+	r.overMiddleware = middleware
 	http.HandleFunc(r.rota, func(response http.ResponseWriter, request *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -102,8 +121,9 @@ func (r *HandlerRequest[B, Q]) Patch(handlerFunc func(http.ResponseWriter, *http
 		generic[B, Q](response, request, r, "PATCH")
 	})
 }
-func (r *HandlerRequest[B, Q]) Delete(handlerFunc func(http.ResponseWriter, *http.Request)) {
+func (r *HandlerRequest[B, Q]) Delete(handlerFunc func(http.ResponseWriter, *http.Request), middleware ...func(http.ResponseWriter, *http.Request) bool) {
 	r.controller = handlerFunc
+	r.overMiddleware = middleware
 	http.HandleFunc(r.rota, func(response http.ResponseWriter, request *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {

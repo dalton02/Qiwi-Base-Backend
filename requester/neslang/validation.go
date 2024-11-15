@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 func readBody(request *http.Request, response http.ResponseWriter) ([]byte, error) {
@@ -26,11 +27,17 @@ func readBody(request *http.Request, response http.ResponseWriter) ([]byte, erro
 }
 
 func validation[B any, Q any](response http.ResponseWriter, request *http.Request) (bool, *http.Request) {
+
 	body, err := readBody(request, response)
 	if err != nil {
 		httpkit.GenerateErrorHttpMessage(400, "Erro ao ler o corpo da requisição", response)
 		return false, request
 	}
+	contentType := request.Header.Get("Content-Type")
+	if strings.HasPrefix(contentType, "multipart/form-data") {
+		return true, request
+	}
+
 	var dataR B
 	jsonString := body
 	json.Unmarshal(body, &dataR)
@@ -56,22 +63,47 @@ func validation[B any, Q any](response http.ResponseWriter, request *http.Reques
 
 func generic[B any, Q any](response http.ResponseWriter, request *http.Request, r *HandlerRequest[B, Q], typeRequest string) {
 	isSameRequest(typeRequest, request, response)
+
 	var valid bool
 	if r.middleware == "public" {
 		valid, request = public[B, Q](response, request)
 	} else if r.middleware == "protected" {
-		valid, request = protected[B, Q](response, request)
+		valid, request = protected[B, Q](response, request, r.profiles)
 	}
 	if !valid {
 		return
 	}
+
 	params, err := extractParams(r.rota, request.URL.Path)
 	if err == nil {
 		ctx := context.WithValue(request.Context(), "params", params)
+		//Rotas extras de middleware aqui
+		validMiddleWare := runMiddlewares[B, Q](response, request.WithContext(ctx), r)
+		if !validMiddleWare {
+			return
+		}
 		r.controller(response, request.WithContext(ctx))
 		return
 	}
+	validMiddleWare := runMiddlewares[B, Q](response, request, r)
+	if !validMiddleWare {
+		return
+	}
 	r.controller(response, request)
+}
+
+func runMiddlewares[B any, Q any](response http.ResponseWriter, request *http.Request, r *HandlerRequest[B, Q]) bool {
+	//Rotas extras de middleware aqui
+	validMiddleWare := false
+	if len(r.overMiddleware) > 0 {
+		for i := 0; i < len(r.overMiddleware); i++ {
+			validMiddleWare = r.overMiddleware[i](response, request)
+			if !validMiddleWare {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func public[B any, Q any](response http.ResponseWriter, request *http.Request) (bool, *http.Request) {
@@ -79,11 +111,23 @@ func public[B any, Q any](response http.ResponseWriter, request *http.Request) (
 	return valid, request
 }
 
-func protected[B any, Q any](response http.ResponseWriter, request *http.Request) (bool, *http.Request) {
+func protected[B any, Q any](response http.ResponseWriter, request *http.Request, profiles []string) (bool, *http.Request) {
 	valid, request := validation[B, Q](response, request)
 	auth := request.Header.Get("Authorization")
 	auth = httpkit.GetBearerToken(auth)
-	_, err := httpkit.GetJwtInfo(auth)
+	jwtInfo, err := httpkit.GetJwtInfo(auth)
+	if len(profiles) > 0 {
+		pass := false
+		perfil, _ := jwtInfo["perfil"].(string)
+		for i := 0; i < len(profiles); i++ {
+			if profiles[i] == perfil {
+				pass = true
+			}
+		}
+		if !pass {
+			httpkit.AppUnauthorized("Você não está autorizado a acessar o conteudo", response)
+		}
+	}
 	if err != nil {
 		valid = false
 		httpkit.AppForbidden("Token invalido/Expirado, faça login novamente", response)

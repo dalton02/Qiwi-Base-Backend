@@ -9,31 +9,32 @@ import (
 )
 
 const queryPostagemNormal = `SELECT 
-       p.id, p.titulo, p.tipo, p.conteudo,p.tags,
-       comentario.conteudo,comentario.criado_em,comentario.id,
-       usuarioComentario.nome,usuarioComentario.curso,usuarioComentario.login, usuarioComentario.id,
-       reacao.tipo,reacao.reacoes_count,
-       usuarioPost.nome,usuarioPost.curso,usuarioPost.login,usuarioPost.id,
-       filhos.conteudo, filhos.criado_em,filhos.id,
-       usuarioFilho.nome,usuarioFilho.curso,usuarioFilho.login,usuarioFilho.id
+ p.id, p.titulo, p.tipo, p.conteudo,p.tags,
+ comentario.conteudo,comentario.criado_em,comentario.id,
+ usuarioComentario.nome,usuarioComentario.curso,usuarioComentario.login, usuarioComentario.id,
+ reacao.tipo,reacao.reacoes_count,
+ usuarioPost.nome,alunoPost.curso,usuarioPost.login,usuarioPost.id,
+ filhos.conteudo, filhos.criado_em,filhos.id,
+ usuarioFilho.nome,usuarioFilho.curso,usuarioFilho.login,usuarioFilho.id
 	   FROM postagem p
 	   LEFT JOIN (
-           SELECT postagem_id, COUNT(*) AS comentarios_count
-           FROM comentario
-           GROUP BY postagem_id
-       ) comentario_count ON p.id = comentario_count.postagem_id
-       LEFT JOIN (
-           SELECT postagem_id, tipo, COUNT(*) AS reacoes_count
-           FROM reacao
-           GROUP BY postagem_id, tipo
-       ) reacao ON p.id = reacao.postagem_id
-       LEFT JOIN usuario usuarioPost ON p.usuario_id = usuarioPost.id
-       LEFT JOIN comentario ON p.id = comentario.postagem_id AND comentario.parente_id IS NULL
-       LEFT JOIN usuario usuarioComentario ON comentario.usuario_id = usuarioComentario.id
-       LEFT JOIN comentario filhos ON comentario.id = filhos.parente_id
-       LEFT JOIN usuario usuarioFilho ON filhos.usuario_id = usuarioFilho.id
+     SELECT postagem_id, COUNT(*) AS comentarios_count
+     FROM comentario
+     GROUP BY postagem_id
+ ) comentario_count ON p.id = comentario_count.postagem_id
+ LEFT JOIN (
+     SELECT postagem_id, tipo, COUNT(*) AS reacoes_count
+     FROM reacao
+     GROUP BY postagem_id, tipo
+ ) reacao ON p.id = reacao.postagem_id
+ LEFT JOIN aluno alunoPost ON p.usuario_id = alunoPost.id_usuario
+ LEFT JOIN usuario usuarioPost ON p.usuario_id = usuarioPost.id
+ LEFT JOIN comentario ON p.id = comentario.postagem_id AND comentario.parente_id IS NULL
+ LEFT JOIN usuario usuarioComentario ON comentario.usuario_id = usuarioComentario.id
+ LEFT JOIN comentario filhos ON comentario.id = filhos.parente_id
+ LEFT JOIN usuario usuarioFilho ON filhos.usuario_id = usuarioFilho.id
 	   WHERE p.titulo = $1
-       AND p.tipo = $2;`
+ AND p.tipo = $2;`
 
 const queryPostagemUfca = `SELECT 
 p.id, p.titulo, p.tipo, p.conteudo,p.tags,
