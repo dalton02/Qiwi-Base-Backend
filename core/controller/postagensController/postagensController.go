@@ -4,11 +4,11 @@ import (
 	"api_journal/core/controller/postagensController/postagensDto"
 	"api_journal/core/server/shared"
 	"api_journal/core/service/postagensService"
-	"api_journal/core/service/userService"
 	httpkit "api_journal/requester/http"
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type ReactionType string
@@ -55,14 +55,19 @@ func GetPostagens(response http.ResponseWriter, request *http.Request) {
 func PostPostagem(response http.ResponseWriter, request *http.Request) {
 	var postagem postagensDto.NovaPostagem
 	json.NewDecoder(request.Body).Decode(&postagem)
-	_, err := userService.GetUserById(shared.DB, postagem.UsuarioId)
-	if err != nil {
-		httpkit.AppBadRequest("Usuario com esse id não existe", response)
-		return
+
+	dataToken, _ := httpkit.GetDataToken(request)
+	idToken, ok := dataToken["id"].(float64)
+	if ok {
+		postagem.UsuarioId = int(idToken)
 	}
-	//Aqui vai o id do aluno
+
 	idPost, err := postagensService.InsertPost(shared.DB, postagem)
 	if err != nil {
+		if strings.Contains(err.Error(), "titulo_key") {
+			httpkit.AppBadRequest("Já existe uma postagem com mesmo titulo", response)
+			return
+		}
 		httpkit.AppBadRequest(err.Error(), response)
 		return
 	}
@@ -79,6 +84,13 @@ func PostComentario(response http.ResponseWriter, request *http.Request) {
 	json.NewDecoder(request.Body).Decode(&comentario)
 	params, _ := httpkit.GetUrlParams(request)
 	comentario.PostagemId, _ = strconv.Atoi(params.Param["postagemId"])
+
+	dataToken, _ := httpkit.GetDataToken(request)
+	idToken, ok := dataToken["id"].(float64)
+	if ok {
+		comentario.UsuarioId = int(idToken)
+	}
+
 	jsonSchema := httpkit.GetJsonSchema[postagensDto.ComentarioData](request)
 	hasParent := false
 	for i := 0; i < len(jsonSchema[1]); i++ {
@@ -97,21 +109,43 @@ func PostComentario(response http.ResponseWriter, request *http.Request) {
 func PostReacao(response http.ResponseWriter, request *http.Request) {
 	var reacao postagensDto.ReacaoData
 	json.NewDecoder(request.Body).Decode(&reacao)
+
 	params, _ := httpkit.GetUrlParams(request)
 	reacao.PostagemId, _ = strconv.Atoi(params.Param["postagemId"])
+
+	dataToken, _ := httpkit.GetDataToken(request)
+	idToken, ok := dataToken["id"].(float64)
+	if ok {
+		reacao.UsuarioId = int(idToken)
+	}
+
 	switch ReactionType(reacao.Tipo) {
 	case LIKE, FOGUINHO, AMEI, ODIEI:
 		break
 	default:
-		httpkit.AppBadRequest("Tipo de reação não é válido: "+reacao.Tipo, response)
+		httpkit.AppBadRequest("Tipo de reação não é válido - Opções disponiveis: (LIKE,FOGUINHO,AMEI,ODIEI)", response)
 		return
 	}
-	_, err := postagensService.InsertReaction(shared.DB, reacao)
+
+	_, err := postagensService.GetReaction(shared.DB, reacao)
+
+	if err == nil {
+		_, errUpdate := postagensService.UpdateReaction(shared.DB, reacao)
+
+		if errUpdate != nil {
+			httpkit.AppBadRequest(err.Error(), response)
+			return
+		}
+		httpkit.AppSucess("Reação atualizada com sucesso", make(map[string]string), response)
+		return
+	}
+
+	_, err = postagensService.InsertReaction(shared.DB, reacao)
 	if err != nil {
 		httpkit.AppBadRequest(err.Error(), response)
 		return
 	}
-	httpkit.AppSucess("Reação inserida com sucesso", make(map[string]string), response)
+	httpkit.AppSucessCreate("Reação inserida com sucesso", make(map[string]string), response)
 }
 
 func PostByParamExiste(response http.ResponseWriter, request *http.Request) bool {

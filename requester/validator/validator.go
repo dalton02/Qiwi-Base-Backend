@@ -83,6 +83,8 @@ func testCase(field string, value reflect.Value, primitive reflect.StructField, 
 	switch field {
 	case "numericString":
 		return isNumericString(value)
+	case "strongPassword":
+		return isStrongPassword(value)
 	case "email":
 		return isEmail(value)
 	case "dateString":

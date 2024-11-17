@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"reflect"
+	"strconv"
 )
 
 func extractQueryParams[Q any](r *http.Request) (Q, bool, map[string]string) {
@@ -96,4 +97,21 @@ func isSameRequest(expectedMethod string, req *http.Request, response http.Respo
 	if req.Method != expectedMethod {
 		httpkit.AppBadRequest("Only "+expectedMethod+" requests are valid", response)
 	}
+}
+
+func limitFormData(response http.ResponseWriter, request *http.Request) bool {
+	maxSize := (10 << 20)
+	contentLength := request.Header.Get("Content-Length")
+	if contentLength != "" {
+		fileSize, err := strconv.Atoi(contentLength)
+		if err != nil {
+			httpkit.AppBadRequest("Erro ao ler cabeçalho http: "+err.Error(), response)
+			return false
+		}
+		if fileSize > maxSize {
+			httpkit.AppBadRequest("Arquivo excedeu o limite de "+strconv.Itoa(maxSize>>20)+" MegaBytes", response)
+			return false
+		}
+	}
+	return true
 }

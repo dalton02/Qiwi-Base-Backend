@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strconv"
 	"time"
+	"unicode"
 )
 
 func isEmail(value reflect.Value) string {
@@ -53,4 +54,39 @@ func isBooleanString(value reflect.Value) string {
 		return "must be a true or false string"
 	}
 	return ""
+}
+func isStrongPassword(value reflect.Value) string {
+	val, test := value.Interface().(string)
+	if !test {
+		return "must be a string"
+
+	}
+
+	hasNumber := false
+	hasUpper := false
+	hasSpecial := false
+	hasLower := false
+
+	for _, c := range val {
+		switch {
+		case unicode.IsNumber(c):
+			hasNumber = true
+		case unicode.IsUpper(c):
+			hasUpper = true
+		case unicode.IsLower(c):
+			hasLower = true
+		case unicode.IsPunct(c) || unicode.IsSymbol(c):
+			hasSpecial = true
+		case unicode.IsLetter(c) || c == ' ':
+		default:
+			//return false, false, false, false
+		}
+	}
+
+	if !hasNumber || !hasSpecial || !hasUpper || !hasLower {
+		return "must be a strong password"
+	}
+
+	return ""
+
 }

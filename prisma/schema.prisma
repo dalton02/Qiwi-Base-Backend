@@ -13,6 +13,7 @@ model Usuario{
   login  String @db.VarChar(200) @unique
   nome   String @db.VarChar(200)
   senha  String? 
+  email  String? @db.VarChar(200) @unique
 
   perfil String @db.VarChar(200)
 
@@ -22,6 +23,8 @@ model Usuario{
   idAluno      Int?     @unique @map("id_aluno")
   aluno        Aluno?    
 
+  postagens Postagem[]
+  comentarios Comentario[]
   notificacoes Notificacao[]
   reacoes Reacao[]
   
@@ -36,8 +39,6 @@ model Aluno{
   codigo Int @db.Integer
   curso  String @db.VarChar(200)
   
-  postagens Postagem[]
-  comentarios Comentario[]
   
   usuario      Usuario  @relation(fields: [idUsuario], references: [id])
   idUsuario    Int      @unique @map("id_usuario")
@@ -50,14 +51,13 @@ model Postagem{
   tipo String //Enum: "noticia,artigo"
   titulo String @db.VarChar(200)
   conteudo String @db.Text()
-  conteudoEditavel String?
   tags String[]
  
   comentarios Comentario[]
   reacoes Reacao[]
   
   usuarioId Int?  @map("usuario_id")
-  usuario Aluno? @relation(fields: [usuarioId],references: [id])
+  usuario Usuario? @relation(fields: [usuarioId],references: [id])
 
   criadoEm       DateTime  @default(now()) @map("criado_em")
   atualizadoEm   DateTime  @default(now()) @updatedAt  @map("atualizado_em")
@@ -74,7 +74,7 @@ model Comentario{
   postagem Postagem @relation(fields: [postagemId],references: [id])
 
   usuarioId Int @map("usuario_id")
-  usuario Aluno @relation(fields: [usuarioId],references: [id])
+  usuario Usuario @relation(fields: [usuarioId],references: [id])
   
   parenteId Int? @map("parente_id")
   parenteComentario Comentario? @relation("ComentarioFilho",fields: [parenteId],references: [id])

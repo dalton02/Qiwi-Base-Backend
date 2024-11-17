@@ -6,9 +6,46 @@ import (
 	"api_journal/core/service/userService"
 	httpkit "api_journal/requester/http"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 )
+
+func CadastroUsuarioExterno(response http.ResponseWriter, request *http.Request) {
+	var user userDto.UserSignin
+	json.NewDecoder(request.Body).Decode(&user)
+	idUsuario, err := userService.InsertUsuarioExterno(shared.DB, user, response)
+	if err != nil {
+		return
+	}
+	var httpResposta userDto.UserData
+	httpResposta.Id = idUsuario
+	httpResposta.Nome = user.Nome
+	httpResposta.Login = user.Login
+	httpkit.AppSucessCreate("Usuário externo cadastrado com sucesso", httpResposta, response)
+}
+
+func LoginUsuarioExterno(response http.ResponseWriter, request *http.Request) {
+	var user userDto.UserLogin
+	json.NewDecoder(request.Body).Decode(&user)
+	userData, err := userService.GetUserByLoginPass(shared.DB, user.Login, user.Senha)
+	if err != nil {
+		httpkit.AppBadRequest("Credenciais incorretas", response)
+		return
+	}
+	jwtInfo := map[string]interface{}{
+		"login":  userData.Login,
+		"nome":   userData.Nome,
+		"id":     userData.Id,
+		"perfil": "externo",
+	}
+	token, err := httpkit.GenerateJwt(jwtInfo)
+	resposta := map[string]interface{}{
+		"token": token,
+	}
+	httpkit.AppSucess("Logado com sucesso", resposta, response)
+
+}
 
 // LoginUser autentica o usuário com base no login e senha fornecidos.
 // @Summary Autenticação de Usuário
@@ -29,37 +66,42 @@ func LoginAluno(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 	codigo, _ := strconv.Atoi(data["codigo"])
-	userInfo := userDto.UserData{
+	alunoInfo := userDto.AlunoData{
 		Login:  user.Login,
 		Curso:  data["curso"],
 		Codigo: codigo,
 		Nome:   data["nome"],
 	}
+	userInfoSignin := userDto.UserSignin{
+		Login: user.Login,
+		Senha: "",
+		Nome:  alunoInfo.Nome,
+	}
 
-	_, err = userService.GetAlunoByCodigo(shared.DB, userInfo.Codigo)
+	alunoInfo.Id, err = userService.GetAlunoByCodigo(shared.DB, alunoInfo.Codigo)
 
+	//Cadastro de usuario, caso não exista ainda
 	if err != nil {
-
-		idUsuario, err2 := userService.InsertUsuario(shared.DB, userInfo, "aluno", response)
-
+		idUsuario, err2 := userService.InsertUsuarioAluno(shared.DB, userInfoSignin, response)
+		alunoInfo.Id = idUsuario
 		if err2 != nil {
 			return
 		}
-
-		_, err3 := userService.InsertAlunoAndRelate(shared.DB, userInfo, idUsuario, response)
+		_, err3 := userService.InsertAlunoAndRelate(shared.DB, alunoInfo, idUsuario, response)
 		if err3 != nil {
 			return
 		}
-
 	}
+
 	jwtInfo := map[string]interface{}{
-		"login":  userInfo.Login,
-		"curso":  userInfo.Curso,
-		"codigo": userInfo.Codigo,
-		"nome":   userInfo.Nome,
+		"login":  alunoInfo.Login,
+		"curso":  alunoInfo.Curso,
+		"codigo": alunoInfo.Codigo,
+		"nome":   alunoInfo.Nome,
+		"id":     alunoInfo.Id,
 		"perfil": "aluno",
 	}
-
+	fmt.Println(jwtInfo)
 	token, err := httpkit.GenerateJwt(jwtInfo)
 	data["token"] = token
 	httpkit.GenerateHttpMessage(200, data, "Login bem sucedido", response)

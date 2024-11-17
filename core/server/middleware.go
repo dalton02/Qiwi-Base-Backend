@@ -6,8 +6,10 @@ import (
 	"net/http"
 )
 
-func middlewareTeste(response http.ResponseWriter, request *http.Request) bool {
-	return true
+func testFormData(response http.ResponseWriter, request *http.Request) {
+
+	httpkit.AppSucess("Sucesso ao enviar arquivo", make(map[string]string), response)
+
 }
 
 func middlewareTeste2(response http.ResponseWriter, request *http.Request) bool {

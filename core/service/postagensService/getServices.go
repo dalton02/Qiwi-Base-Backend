@@ -112,3 +112,13 @@ LIMIT $3 OFFSET $4;`
 	listagem.Pesquisa = pesquisa
 	return listagem, nil
 }
+
+func GetReaction(db *sql.DB, reacao postagensDto.ReacaoData) (int, error) {
+	var lastInsertID int
+
+	err := db.QueryRow("select id from reacao WHERE postagem_id=$1 AND usuario_id=$2", reacao.PostagemId, reacao.UsuarioId).Scan(&lastInsertID)
+	if err != nil {
+		return 0, err
+	}
+	return int(lastInsertID), nil
+}

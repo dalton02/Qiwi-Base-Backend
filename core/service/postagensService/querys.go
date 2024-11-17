@@ -11,11 +11,11 @@ import (
 const queryPostagemNormal = `SELECT 
  p.id, p.titulo, p.tipo, p.conteudo,p.tags,
  comentario.conteudo,comentario.criado_em,comentario.id,
- usuarioComentario.nome,usuarioComentario.curso,usuarioComentario.login, usuarioComentario.id,
+ usuarioComentario.nome,usuarioComentario.login, usuarioComentario.id,
  reacao.tipo,reacao.reacoes_count,
- usuarioPost.nome,alunoPost.curso,usuarioPost.login,usuarioPost.id,
+ usuarioPost.nome,usuarioPost.login,usuarioPost.id,
  filhos.conteudo, filhos.criado_em,filhos.id,
- usuarioFilho.nome,usuarioFilho.curso,usuarioFilho.login,usuarioFilho.id
+ usuarioFilho.nome,usuarioFilho.login,usuarioFilho.id
 	   FROM postagem p
 	   LEFT JOIN (
      SELECT postagem_id, COUNT(*) AS comentarios_count
@@ -86,10 +86,10 @@ func scanPostagemNormal(rows *sql.Rows, postagem postagensDto.PostagemDataComple
 		var filhoComAutorId sql.NullInt32
 
 		err := rows.Scan(&postagem.Id, &postagem.Titulo, &postagem.Tipo, &postagem.Conteudo, &tags,
-			&ComConteudo, &ComCriadoEm, &ComId, &ComAutorNome, &ComAutorCurso, &ComAutorLogin, &ComAutorId,
+			&ComConteudo, &ComCriadoEm, &ComId, &ComAutorNome, &ComAutorLogin, &ComAutorId,
 			&reacaoTipo, &reacoesCount,
-			&postagem.Autor.Nome, &postagem.Autor.Curso, &postagem.Autor.Login, &postagem.Autor.Id,
-			&filhoComConteudo, &filhoComCriadoEm, &filhoComId, &filhoComAutorNome, &filhoComAutorCurso, &filhoComAutorLogin, &filhoComAutorId)
+			&postagem.Autor.Nome, &postagem.Autor.Login, &postagem.Autor.Id,
+			&filhoComConteudo, &filhoComCriadoEm, &filhoComId, &filhoComAutorNome, &filhoComAutorLogin, &filhoComAutorId)
 
 		if err != nil {
 			return postagem, err, 400

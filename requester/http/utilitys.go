@@ -49,7 +49,7 @@ func GetUrlParams(request *http.Request) (dtoRequest.Params, error) {
 	return params, nil
 }
 
-func GetDataToken(request *http.Request) (any, error) {
+func GetDataToken(request *http.Request) (map[string]interface{}, error) {
 	authorization := request.Header.Get("Authorization")
 	token := GetBearerToken(authorization)
 	tokenData, err := GetJwtInfo(token)

@@ -63,7 +63,7 @@ type ComentarioDataComplete struct {
 type ComentarioData struct {
 	Conteudo   string `json:"conteudo" validator:"required"`
 	CriadoEm   string `json:"criadoEm"`
-	UsuarioId  int    `json:"usuarioId" validator:"required"`
+	UsuarioId  int    `json:"usuarioId"`
 	PostagemId int    `json:"postagemId"` //Validado na url
 	ParenteId  int    `json:"parenteId" validator:"optional"`
 	Id         int    `json:"id"`
@@ -71,7 +71,7 @@ type ComentarioData struct {
 
 type ReacaoData struct {
 	Tipo       string `json:"tipo" validator:"required"`
-	UsuarioId  int    `json:"usuarioId" validator:"required"`
+	UsuarioId  int    `json:"usuarioId"`
 	PostagemId int    `json:"postagemId"` //Validado na url
 	Id         int    `json:"id"`
 }
@@ -81,5 +81,5 @@ type NovaPostagem struct {
 	Tipo      string   `json:"tipo" validator:"required"`
 	Conteudo  string   `json:"conteudo" validator:"required"`
 	Tags      []string `json:"tags" validator:"required"`
-	UsuarioId int      `json:"usuarioId" validator:"required"`
+	UsuarioId int      `json:"usuarioId""`
 }

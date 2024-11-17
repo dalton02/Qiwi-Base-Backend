@@ -31,8 +31,8 @@ func InsertPostFromUfca(db *sql.DB, tipo string, titulo string, conteudo string,
 
 func FilhoPaiPost(db *sql.DB, parenteId int, postagemId int) bool {
 	var id int
-	err := db.QueryRow("SELECT id FROM comentarios WHERE id=$1 AND postagem_id=$2", parenteId, postagemId).Scan(&id)
-
+	err := db.QueryRow("SELECT id FROM comentario WHERE id=$1 AND postagem_id=$2", parenteId, postagemId).Scan(&id)
+	fmt.Println("feito")
 	if err != nil {
 		return false
 	}
@@ -68,7 +68,17 @@ func InsertReaction(db *sql.DB, reacao postagensDto.ReacaoData) (int, error) {
 
 	err := db.QueryRow("INSERT INTO reacao (tipo, postagem_id, usuario_id) VALUES ($1, $2, $3) RETURNING id", reacao.Tipo, reacao.PostagemId, reacao.UsuarioId).Scan(&lastInsertID)
 	if err != nil {
-		return 0, fmt.Errorf("Erro ao inserir nova reação")
+		return 0, err
+	}
+	return int(lastInsertID), nil
+}
+
+func UpdateReaction(db *sql.DB, reacao postagensDto.ReacaoData) (int, error) {
+	var lastInsertID int
+
+	err := db.QueryRow("UPDATE reacao SET tipo = $1 WHERE postagem_id=$2 AND usuario_id=$3 RETURNING id", reacao.Tipo, reacao.PostagemId, reacao.UsuarioId).Scan(&lastInsertID)
+	if err != nil {
+		return 0, err
 	}
 	return int(lastInsertID), nil
 }

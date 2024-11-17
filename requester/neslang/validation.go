@@ -33,10 +33,6 @@ func validation[B any, Q any](response http.ResponseWriter, request *http.Reques
 		httpkit.GenerateErrorHttpMessage(400, "Erro ao ler o corpo da requisição", response)
 		return false, request
 	}
-	contentType := request.Header.Get("Content-Type")
-	if strings.HasPrefix(contentType, "multipart/form-data") {
-		return true, request
-	}
 
 	var dataR B
 	jsonString := body
@@ -50,6 +46,7 @@ func validation[B any, Q any](response http.ResponseWriter, request *http.Reques
 	params, has, maping := extractQueryParams[Q](request)
 	errQuerys := ""
 	hasErrorQ := false
+
 	if has {
 		errQuerys, hasErrorQ = validator.CheckPropretys[Q](params, validator.QueryMap(maping))
 	}
@@ -63,6 +60,14 @@ func validation[B any, Q any](response http.ResponseWriter, request *http.Reques
 
 func generic[B any, Q any](response http.ResponseWriter, request *http.Request, r *HandlerRequest[B, Q], typeRequest string) {
 	isSameRequest(typeRequest, request, response)
+
+	contentType := request.Header.Get("Content-Type")
+	if strings.HasPrefix(contentType, "multipart/form-data") {
+		passFormData := limitFormData(response, request)
+		if !passFormData {
+			return
+		}
+	}
 
 	var valid bool
 	if r.middleware == "public" {
@@ -92,6 +97,53 @@ func generic[B any, Q any](response http.ResponseWriter, request *http.Request, 
 	r.controller(response, request)
 }
 
+func public[B any, Q any](response http.ResponseWriter, request *http.Request) (bool, *http.Request) {
+
+	contentType := request.Header.Get("Content-Type")
+	if strings.HasPrefix(contentType, "multipart/form-data") {
+		return true, request
+	}
+	valid, request := validation[B, Q](response, request)
+	return valid, request
+}
+
+func protected[B any, Q any](response http.ResponseWriter, request *http.Request, profiles []string) (bool, *http.Request) {
+
+	valid := true
+
+	contentType := request.Header.Get("Content-Type")
+
+	auth := request.Header.Get("Authorization")
+	auth = httpkit.GetBearerToken(auth)
+
+	jwtInfo, err := httpkit.GetJwtInfo(auth)
+
+	if err != nil {
+		httpkit.AppForbidden("Token invalido/Expirado, faça login novamente", response)
+		return false, request
+	}
+
+	if len(profiles) > 0 {
+		pass := false
+		perfil, _ := jwtInfo["perfil"].(string)
+		for i := 0; i < len(profiles); i++ {
+			if profiles[i] == perfil {
+				pass = true
+			}
+		}
+		if !pass {
+			httpkit.AppUnauthorized("Você não está autorizado a acessar o conteudo", response)
+			return false, request
+		}
+	}
+
+	if !strings.HasPrefix(contentType, "multipart/form-data") {
+		valid, request = validation[B, Q](response, request)
+	}
+
+	return valid, request
+}
+
 func runMiddlewares[B any, Q any](response http.ResponseWriter, request *http.Request, r *HandlerRequest[B, Q]) bool {
 	//Rotas extras de middleware aqui
 	validMiddleWare := false
@@ -104,33 +156,4 @@ func runMiddlewares[B any, Q any](response http.ResponseWriter, request *http.Re
 		}
 	}
 	return true
-}
-
-func public[B any, Q any](response http.ResponseWriter, request *http.Request) (bool, *http.Request) {
-	valid, request := validation[B, Q](response, request)
-	return valid, request
-}
-
-func protected[B any, Q any](response http.ResponseWriter, request *http.Request, profiles []string) (bool, *http.Request) {
-	valid, request := validation[B, Q](response, request)
-	auth := request.Header.Get("Authorization")
-	auth = httpkit.GetBearerToken(auth)
-	jwtInfo, err := httpkit.GetJwtInfo(auth)
-	if len(profiles) > 0 {
-		pass := false
-		perfil, _ := jwtInfo["perfil"].(string)
-		for i := 0; i < len(profiles); i++ {
-			if profiles[i] == perfil {
-				pass = true
-			}
-		}
-		if !pass {
-			httpkit.AppUnauthorized("Você não está autorizado a acessar o conteudo", response)
-		}
-	}
-	if err != nil {
-		valid = false
-		httpkit.AppForbidden("Token invalido/Expirado, faça login novamente", response)
-	}
-	return valid, request
 }
