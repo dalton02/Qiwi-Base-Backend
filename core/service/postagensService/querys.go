@@ -105,7 +105,7 @@ func scanPostagemNormal(rows *sql.Rows, postagem postagensDto.PostagemDataComple
 		comentario.Conteudo = ComConteudo.String
 		comentario.CriadoEm = ComCriadoEm.String
 		comentario.Id = int(ComId.Int32)
-		comentario.Autor.Curso = ComAutorCurso.String
+		comentario.Autor.Contexto = ComAutorCurso.String
 		comentario.Autor.Login = ComAutorLogin.String
 		comentario.Autor.Nome = ComAutorNome.String
 		comentario.Autor.Id = int(ComAutorId.Int32)
@@ -116,10 +116,10 @@ func scanPostagemNormal(rows *sql.Rows, postagem postagensDto.PostagemDataComple
 				Id:       int(filhoComId.Int32),
 				CriadoEm: filhoComCriadoEm.String,
 				Autor: postagensDto.UserPostagem{
-					Login: filhoComAutorLogin.String,
-					Id:    int(filhoComAutorId.Int32),
-					Nome:  filhoComAutorNome.String,
-					Curso: filhoComAutorCurso.String,
+					Login:    filhoComAutorLogin.String,
+					Id:       int(filhoComAutorId.Int32),
+					Nome:     filhoComAutorNome.String,
+					Contexto: filhoComAutorCurso.String,
 				},
 			}
 			comentario.Filhos = append(comentario.Filhos, filho)
@@ -180,10 +180,10 @@ func scanPostagemUfca(rows *sql.Rows, postagem postagensDto.PostagemDataComplete
 				Id:       int(filhoComId.Int32),
 				CriadoEm: filhoComCriadoEm.String,
 				Autor: postagensDto.UserPostagem{
-					Login: filhoComAutorLogin.String,
-					Id:    int(filhoComAutorId.Int32),
-					Nome:  filhoComAutorNome.String,
-					Curso: filhoComAutorCurso.String,
+					Login:    filhoComAutorLogin.String,
+					Id:       int(filhoComAutorId.Int32),
+					Nome:     filhoComAutorNome.String,
+					Contexto: filhoComAutorCurso.String,
 				},
 			}
 			comentario.Filhos = append(comentario.Filhos, filho)

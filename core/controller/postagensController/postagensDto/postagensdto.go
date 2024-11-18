@@ -47,10 +47,10 @@ type PostagemDataComplete struct {
 }
 
 type UserPostagem struct {
-	Login string `json:"login"`
-	Nome  string `json:"nome"`
-	Curso string `json:"curso"`
-	Id    int    `json:"id"`
+	Login    string `json:"login"`
+	Nome     string `json:"nome"`
+	Contexto string `json:"contexto"`
+	Id       int    `json:"id"`
 }
 
 type ComentarioDataComplete struct {

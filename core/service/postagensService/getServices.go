@@ -65,8 +65,8 @@ func GetPostagens(db *sql.DB, pagina int, limite int, pesquisa string, tipo stri
 	query := `SELECT p.id, p.titulo, p.tipo, p.conteudo, p.tags,
        COALESCE(c.comentarios_count, 0) AS comentarios_count,
        COALESCE(r.reacoes_count, 0) AS reacoes_count,
-       r.tipo AS reacao_tipo,
-       u.nome AS usuario_nome, u.curso AS usuario_curso, u.login AS usuario_login,u.id AS usuario_id
+       r.tipo,
+       u.nome, u.login,u.id
 FROM postagem p
 LEFT JOIN (
     SELECT postagem_id, COUNT(*) AS comentarios_count
@@ -96,7 +96,7 @@ LIMIT $3 OFFSET $4;`
 		var reacoesCount int
 		var reacaoTipo sql.NullString // Para lidar com reações que podem ser nulas
 		rows.Scan(&postagem.Id, &postagem.Titulo, &postagem.Tipo, &postagem.Conteudo, &tags,
-			&postagem.Comentarios, &reacoesCount, &reacaoTipo, &postagem.Autor.Nome, &postagem.Autor.Curso, &postagem.Autor.Login, &postagem.Autor.Id)
+			&postagem.Comentarios, &reacoesCount, &reacaoTipo, &postagem.Autor.Nome, &postagem.Autor.Login, &postagem.Autor.Id)
 
 		postagem.Tags = tags
 		postagem.Reacoes = make(map[string]int)

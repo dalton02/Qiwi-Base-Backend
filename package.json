@@ -1,6 +1,6 @@
 {  
   "scripts": {
-    "dev": "nodemon --exec 'go run' ./main.go --signal SIGTERM"
+    "dev": "swag init && nodemon --exec go run ./main.go --signal SIGTERM"
   },
   "devDependencies": {
     "prisma": "^5.19.1"

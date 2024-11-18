@@ -11,6 +11,15 @@ import (
 	"strconv"
 )
 
+// @Summary Cadastro de Usuário Externo
+// @Description Autentica um usuário externo e retorna um token JWT com os dados do usuário.
+// @Tags Autenticação
+// @Accept json
+// @Produce json
+// @Param cadastro body userDto.UserSignin true "Dados de Cadastro"
+// @Failure 400 {object} map[string]string "Erro ao processar a requisição"
+// @Failure 500 {object} map[string]string "Erro interno do servidor"
+// @Router /auth/cadastro-externo [post]
 func CadastroUsuarioExterno(response http.ResponseWriter, request *http.Request) {
 	var user userDto.UserSignin
 	json.NewDecoder(request.Body).Decode(&user)
@@ -25,6 +34,15 @@ func CadastroUsuarioExterno(response http.ResponseWriter, request *http.Request)
 	httpkit.AppSucessCreate("Usuário externo cadastrado com sucesso", httpResposta, response)
 }
 
+// @Summary Autenticação de Usuário Externo
+// @Description Autentica um usuário externo e retorna um token JWT com os dados do usuário.
+// @Tags Autenticação
+// @Accept json
+// @Produce json
+// @Param login body userDto.UserLogin true "Dados de Login"
+// @Failure 400 {object} map[string]string "Erro ao processar a requisição"
+// @Failure 500 {object} map[string]string "Erro interno do servidor"
+// @Router /auth/login-externo [post]
 func LoginUsuarioExterno(response http.ResponseWriter, request *http.Request) {
 	var user userDto.UserLogin
 	json.NewDecoder(request.Body).Decode(&user)
@@ -47,16 +65,15 @@ func LoginUsuarioExterno(response http.ResponseWriter, request *http.Request) {
 
 }
 
-// LoginUser autentica o usuário com base no login e senha fornecidos.
-// @Summary Autenticação de Usuário
-// @Description Autentica um usuário e retorna um token JWT com os dados do usuário.
+// @Summary Autenticação de Usuário Aluno
+// @Description Autentica um aluno e retorna um token JWT com os dados do usuário.
 // @Tags Autenticação
 // @Accept json
 // @Produce json
 // @Param login body userDto.UserLogin true "Dados de Login"
 // @Failure 400 {object} map[string]string "Erro ao processar a requisição"
 // @Failure 500 {object} map[string]string "Erro interno do servidor"
-// @Router /login [post]
+// @Router /auth/login [post]
 func LoginAluno(response http.ResponseWriter, request *http.Request) {
 	var user userDto.UserLogin
 	json.NewDecoder(request.Body).Decode(&user)

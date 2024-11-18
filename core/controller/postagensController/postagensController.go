@@ -20,6 +20,16 @@ const (
 	ODIEI    ReactionType = "ODIEI"
 )
 
+// @Summary Pegar postagem por titulo
+// @Description Pega uma postagem por titulo
+// @Tags Postagens
+// @Param titulo path string true "Título da postagem"
+// @Param tipo query string  true "Tipo de postagem: (alunoPost,ufcaPost)"
+// @Produce json
+// @Success 200 {object} postagensDto.PostagemDataComplete "Postagem a mostra"
+// @Failure 400 {object} map[string]string "Erro ao processar a requisição"
+// @Failure 500 {object} map[string]string "Erro interno do servidor"
+// @Router /postagens/{titulo} [get]
 func GetPostagemByTitle(response http.ResponseWriter, request *http.Request) {
 	params, _ := httpkit.GetUrlParams(request)
 	titulo := params.Param["titulo"]
@@ -32,6 +42,17 @@ func GetPostagemByTitle(response http.ResponseWriter, request *http.Request) {
 	httpkit.AppSucess("Listagem bem sucedida", listagem, response)
 }
 
+// @Summary Pegar listagem de postagens
+// @Description Gera uma lista paginada com as postagens do blog
+// @Tags Postagens
+// @Param pagina query string false "Pagina"
+// @Param limite query string false "Limite por página"
+// @Param pesquisa query string false "Pesquisa"
+// @Produce json
+// @Success 200 {object} postagensDto.ListagemPostagens  "Listagem a mostra:"
+// @Failure 400 {object} map[string]string "Erro ao processar a requisição"
+// @Failure 500 {object} map[string]string "Erro interno do servidor"
+// @Router /postagens/listar [get]
 func GetPostagens(response http.ResponseWriter, request *http.Request) {
 	paginaStr := request.URL.Query().Get("pagina")
 	limiteStr := request.URL.Query().Get("limite")
@@ -52,6 +73,17 @@ func GetPostagens(response http.ResponseWriter, request *http.Request) {
 	httpkit.AppSucess("Listagem bem sucedida", listagem, response)
 }
 
+// @Summary Criar uma nova postagem
+// @Description Cria uma nova postagem no blog
+// @Tags Postagens
+// @Accept json
+// @Param Authorization header string true "Bearer token"
+// @Param postagem body postagensDto.NovaPostagem true "Dados da nova postagem"
+// @Produce json
+// @Success 201 {object} postagensDto.PostagemDataComplete "Postagem criada com sucesso"
+// @Failure 400 {object} map[string]string "Erro ao processar a requisição"
+// @Failure 500 {object} map[string]string "Erro interno do servidor"
+// @Router /postagens/postar [post]
 func PostPostagem(response http.ResponseWriter, request *http.Request) {
 	var postagem postagensDto.NovaPostagem
 	json.NewDecoder(request.Body).Decode(&postagem)
@@ -79,6 +111,18 @@ func PostPostagem(response http.ResponseWriter, request *http.Request) {
 	httpkit.AppSucess("Sucesso", post, response)
 }
 
+// @Summary Adicionar um comentário a uma postagem
+// @Description Adiciona um comentário a uma postagem existente
+// @Tags Comentários
+// @Accept json
+// @Param Authorization header string true "Bearer token"
+// @Param postagemId path int true "ID da postagem"
+// @Param comentario body postagensDto.ComentarioData true "Dados do comentário"
+// @Produce json
+// @Success 201 {object} map[string]string "Comentário inserido com sucesso"
+// @Failure 400 {object} map[string]string "Erro ao processar a requisição"
+// @Failure 500 {object} map[string]string "Erro interno do servidor"
+// @Router /postagens/{postagemId}/comentar [post]
 func PostComentario(response http.ResponseWriter, request *http.Request) {
 	var comentario postagensDto.ComentarioData
 	json.NewDecoder(request.Body).Decode(&comentario)
@@ -106,6 +150,19 @@ func PostComentario(response http.ResponseWriter, request *http.Request) {
 	httpkit.AppSucess("Comentário inserido com sucesso", make(map[string]string), response)
 }
 
+// @Summary Adicionar ou atualizar uma reação a uma postagem
+// @Description Adiciona ou atualiza uma reação (LIKE, FOGUINHO, AMEI, ODIEI) para uma postagem específica
+// @Tags Reações
+// @Accept json
+// @Param postagemId path int true "ID da postagem"
+// @Param Authorization header string true "Bearer token"
+// @Param reacao body postagensDocDto.ReacaoData true "Dados da reação"
+// @Produce json
+// @Success 201 {object} map[string]string "Reação inserida com sucesso"
+// @Success 200 {object} map[string]string "Reação atualizada com sucesso"
+// @Failure 400 {object} map[string]string "Erro ao processar a requisição"
+// @Failure 500 {object} map[string]string "Erro interno do servidor"
+// @Router /postagens/{postagemId}/reagir [post]
 func PostReacao(response http.ResponseWriter, request *http.Request) {
 	var reacao postagensDto.ReacaoData
 	json.NewDecoder(request.Body).Decode(&reacao)

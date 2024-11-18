@@ -15,8 +15,7 @@ import (
 // @title Golang Documentação API 2.5
 // @version 1.0
 // @description Esta é uma API simples usando Gin e Swagger.
-// @host localhost:8080
-// @BasePath /api/v1
+// @host localhost:4000
 func main() {
 
 	go func() {
